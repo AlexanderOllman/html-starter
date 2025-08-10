@@ -9,7 +9,6 @@ To deploy on Vercel:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script defer src="/_vercel/insights/script.js"></script>
     <title>Ghibli Image Generator</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Caveat&display=swap');
@@ -992,10 +991,8 @@ To deploy on Vercel:
         const emailTooltip = document.getElementById('emailTooltip');
         const watchScreenText = document.getElementById('watchScreenText');
 
-        // For Vercel deployment: Environment variable will be injected at build time
-        // In Vercel, add OPENAI_API_KEY to your environment variables in the dashboard
-         const OPENAI_API_KEY = typeof process !== 'undefined' && process.env ? process.env.OPENAI_API_KEY : 
-                                window.OPENAI_API_KEY || ""; // Fallback for build-time injection
+        // API endpoints are now handled by Vercel serverless functions
+        // The OPENAI_API_KEY environment variable is accessed server-side in /api/ endpoints
         let currentStream = null;
         let capturedImageDataURL = null;
 
@@ -1107,50 +1104,26 @@ To deploy on Vercel:
             watchScreenText.textContent = 'Hello';
         }
 
-        // Get description of image from OpenAI
+        // Get description of image from API endpoint
         async function getImageDescription() {
-            if (!OPENAI_API_KEY) {
-                return "A beautiful captured moment transformed into art";
-            }
-
             try {
-                const base64Data = capturedImageDataURL.split(',')[1];
-                
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                const response = await fetch('/api/describe-image', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "gpt-4o",
-                        messages: [
-                            {
-                                role: "user",
-                                content: [
-                                    {
-                                        type: "text",
-                                        text: "Describe this image in 8-12 poetic words focusing on the subject, mood, and setting."
-                                    },
-                                    {
-                                        type: "image_url",
-                                        image_url: {
-                                            url: capturedImageDataURL
-                                        }
-                                    }
-                                ]
-                            }
-                        ],
-                        max_tokens: 50
+                        imageData: capturedImageDataURL
                     })
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    return data.choices[0].message.content.trim();
-                } else {
-                    throw new Error('Failed to get description');
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
                 }
+
+                const data = await response.json();
+                return data.description;
+
             } catch (error) {
                 console.error('Error getting image description:', error);
                 return "A beautiful captured moment transformed into art";
@@ -1183,12 +1156,8 @@ To deploy on Vercel:
             await generateGhibliImage();
         }
 
-        // Generate Ghibli image using OpenAI API
+        // Generate Ghibli image using API endpoint
         async function generateGhibliImage() {
-            if (!OPENAI_API_KEY) {
-                alert('OpenAI API Key not found. Please check your environment variables.');
-                return;
-            }
 
             try {
                 console.log("Generating Ghibli style image...");
@@ -1203,34 +1172,16 @@ To deploy on Vercel:
                 
                 Maintain the original subject and pose, but give it the enchanting quality of a Hayao Miyazaki film scene.`;
 
-                // Convert dataURL to Blob for form data
-                const base64Data = capturedImageDataURL.split(',')[1];
-                const binaryData = atob(base64Data);
-                const arrayBuffer = new ArrayBuffer(binaryData.length);
-                const uint8Array = new Uint8Array(arrayBuffer);
-                for (let i = 0; i < binaryData.length; i++) {
-                    uint8Array[i] = binaryData.charCodeAt(i);
-                }
-                const imageBlob = new Blob([arrayBuffer], { type: 'image/png' });
-
-                // Check image size (must be under 4MB)
-                if (imageBlob.size > 4 * 1024 * 1024) {
-                    throw new Error('Image is too large. Must be under 4MB.');
-                }
-
-                // Create FormData for the edits endpoint
-                const formData = new FormData();
-                formData.append('model', 'gpt-image-1');
-                formData.append('image[]', imageBlob, 'input.png');
-                formData.append('prompt', imagePrompt);
-
-                // Call OpenAI Images Edits API
-                const response = await fetch('https://api.openai.com/v1/images/edits', {
+                // Call API endpoint for image editing
+                const response = await fetch('/api/edit-image', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                        'Content-Type': 'application/json'
                     },
-                    body: formData
+                    body: JSON.stringify({
+                        imageData: capturedImageDataURL,
+                        prompt: imagePrompt
+                    })
                 });
 
                 if (!response.ok) {
@@ -1240,18 +1191,17 @@ To deploy on Vercel:
                 }
 
                 const data = await response.json();
-                console.log("Received response from OpenAI:", data);
+                console.log("Received response from API:", data);
                 
-                // Extract image data from OpenAI edits response
-                if (data.data && data.data.length > 0) {
-                    const imageBase64 = data.data[0].b64_json;
+                // Extract image data from API response
+                if (data.imageBase64) {
                     
                     // Hide generating overlay and captured image
                     generatingOverlay.style.display = 'none';
                     capturedImage.style.display = 'none';
                     
                     // Show generated image
-                    generatedImage.src = `data:image/png;base64,${imageBase64}`;
+                    generatedImage.src = data.imageBase64;
                     generatedImage.style.display = 'block';
                     
                     // Show action buttons
@@ -1277,36 +1227,16 @@ To deploy on Vercel:
             }
         }
 
-        // Fallback function using DALL-E variations API
+        // Fallback function using DALL-E variations API endpoint
         async function generateWithDallE() {
-            // Convert dataURL to Blob for form data
-            const base64Data = capturedImageDataURL.split(',')[1];
-            const binaryData = atob(base64Data);
-            const arrayBuffer = new ArrayBuffer(binaryData.length);
-            const uint8Array = new Uint8Array(arrayBuffer);
-            for (let i = 0; i < binaryData.length; i++) {
-                uint8Array[i] = binaryData.charCodeAt(i);
-            }
-            const imageBlob = new Blob([arrayBuffer], { type: 'image/png' });
-
-            // Check image size (must be under 4MB)
-            if (imageBlob.size > 4 * 1024 * 1024) {
-                throw new Error('Image is too large. Must be under 4MB.');
-            }
-
-            // Create FormData for the variations endpoint
-            const formData = new FormData();
-            formData.append('image', imageBlob, 'input.png');
-            formData.append('n', '1');
-            formData.append('size', '1024x1024');
-            formData.append('response_format', 'b64_json');
-
-            const response = await fetch('https://api.openai.com/v1/images/variations', {
+            const response = await fetch('/api/variations', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    'Content-Type': 'application/json'
                 },
-                body: formData
+                body: JSON.stringify({
+                    imageData: capturedImageDataURL
+                })
             });
 
             if (!response.ok) {
@@ -1315,14 +1245,13 @@ To deploy on Vercel:
             }
 
             const data = await response.json();
-            const imageBase64 = data.data[0].b64_json;
             
             // Hide generating overlay and captured image
             generatingOverlay.style.display = 'none';
             capturedImage.style.display = 'none';
             
             // Show generated image
-            generatedImage.src = `data:image/png;base64,${imageBase64}`;
+            generatedImage.src = data.imageBase64;
             generatedImage.style.display = 'block';
             
             // Show action buttons

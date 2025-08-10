@@ -1,6 +1,23 @@
 {
-  "private": true,
+  "name": "ghibli-image-generator",
+  "version": "1.0.0",
+  "description": "Transform photos into Studio Ghibli style illustrations using OpenAI",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required for static site'",
+    "start": "vercel dev"
+  },
   "dependencies": {
-    "@vercel/edge": "^0.1.2"
-  }
+    "form-data": "^4.0.0"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "ghibli",
+    "openai",
+    "image-generation",
+    "vercel"
+  ],
+  "author": "",
+  "license": "MIT"
 }
