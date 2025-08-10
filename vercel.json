@@ -1,5 +1,6 @@
 {
-  "public": ".",
+  "buildCommand": "echo 'No build step required'",
+  "outputDirectory": ".",
   "env": {
     "OPENAI_API_KEY": "$OPENAI_API_KEY"
   }
