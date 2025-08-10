@@ -1,9 +1,5 @@
 {
-  "functions": {
-    "api/*.js": {
-      "runtime": "@vercel/node@20.x"
-    }
-  },
+
   "env": {
     "OPENAI_API_KEY": "$OPENAI_API_KEY"
   }
