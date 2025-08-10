@@ -876,7 +876,7 @@ To deploy on Vercel:
         <!-- Left Side - Header Section -->
         <div class="header-section">
             <img src="header.png" alt="Header" class="header-image">
-            <p class="header-subtext">Click on the buttons to discover the meow-gic!</p>
+            <!-- <p class="header-subtext">Click on the buttons to discover the meow-gic!</p> -->
             <div class="desktop-buttons">
                 <a href="https://ezvrhoowk8u.typeform.com/to/SgW5VT44" target="_blank" class="mailing-button">Join Mailing List</a>
             </div>
@@ -904,22 +904,22 @@ To deploy on Vercel:
             <!-- Button overlays positioned over the watch buttons -->
             <div class="watch-buttons">
                 <!-- Row 1 - Top row (4 columns) -->
-                <button class="watch-btn watch-btn-capture" id="watchGenerateBtn" data-row="0" data-col="0" title="Generate Ghibli Image">🎨</button>
-                <button class="watch-btn watch-btn-placeholder" data-row="0" data-col="1" title="Button 2">2</button>
-                <button class="watch-btn watch-btn-placeholder" data-row="0" data-col="2" title="Button 3">3</button>
-                <button class="watch-btn watch-btn-placeholder" data-row="0" data-col="3" title="Button 4">4</button>
+                <a href="https://anna.dating" target="_blank" class="watch-btn watch-btn-capture" id="watchGenerateBtn" data-row="0" data-col="0" title="Visit Anna.Dating">🎨</a>
+                <a href="https://anna.dating" target="_blank" class="watch-btn watch-btn-placeholder" data-row="0" data-col="1" title="Visit Anna.Dating">2</a>
+                <a href="https://anna.dating" target="_blank" class="watch-btn watch-btn-placeholder" data-row="0" data-col="2" title="Visit Anna.Dating">3</a>
+                <a href="https://anna.dating" target="_blank" class="watch-btn watch-btn-placeholder" data-row="0" data-col="3" title="Visit Anna.Dating">4</a>
                 
                 <!-- Row 2 - Middle row (4 columns) -->
-                <button class="watch-btn watch-btn-placeholder" data-row="1" data-col="0" title="Button 5">5</button>
-                <button class="watch-btn watch-btn-placeholder" data-row="1" data-col="1" title="Button 6">6</button>
-                <button class="watch-btn watch-btn-placeholder" data-row="1" data-col="2" title="Button 7">7</button>
-                <button class="watch-btn watch-btn-placeholder" data-row="1" data-col="3" title="Button 8">8</button>
+                <a href="https://anna.dating" target="_blank" class="watch-btn watch-btn-placeholder" data-row="1" data-col="0" title="Visit Anna.Dating">5</a>
+                <a href="https://anna.dating" target="_blank" class="watch-btn watch-btn-placeholder" data-row="1" data-col="1" title="Visit Anna.Dating">6</a>
+                <a href="https://anna.dating" target="_blank" class="watch-btn watch-btn-placeholder" data-row="1" data-col="2" title="Visit Anna.Dating">7</a>
+                <a href="https://anna.dating" target="_blank" class="watch-btn watch-btn-placeholder" data-row="1" data-col="3" title="Visit Anna.Dating">8</a>
                 
                 <!-- Row 3 - Bottom row (4 columns) -->
-                <button class="watch-btn watch-btn-placeholder" data-row="2" data-col="0" title="Button 9">9</button>
-                <button class="watch-btn watch-btn-placeholder" data-row="2" data-col="1" title="Button 10">10</button>
-                <button class="watch-btn watch-btn-placeholder" data-row="2" data-col="2" title="Button 11">11</button>
-                <button class="watch-btn watch-btn-placeholder" data-row="2" data-col="3" title="Button 12"><a href="https://anna.dating">12</a></button>
+                <a href="https://anna.dating" target="_blank" class="watch-btn watch-btn-placeholder" data-row="2" data-col="0" title="Visit Anna.Dating">9</a>
+                <a href="https://anna.dating" target="_blank" class="watch-btn watch-btn-placeholder" data-row="2" data-col="1" title="Visit Anna.Dating">10</a>
+                <a href="https://anna.dating" target="_blank" class="watch-btn watch-btn-placeholder" data-row="2" data-col="2" title="Visit Anna.Dating">11</a>
+                <a href="https://anna.dating" target="_blank" class="watch-btn watch-btn-placeholder" data-row="2" data-col="3" title="Visit Anna.Dating">12</a>
             </div>
             </div>
           </div>
@@ -940,7 +940,7 @@ To deploy on Vercel:
                     <div>Requesting camera access...</div>
         </div>
                 <video id="videoElement" autoplay muted style="display: none;"></video>
-                <button class="capture-btn" id="captureBtn" style="display: none;">📸</button>
+                <a href="https://anna.dating" target="_blank" class="capture-btn" id="captureBtn" style="display: none;">📸</a>
     </div>
 
             <!-- Result Container -->
@@ -990,7 +990,8 @@ To deploy on Vercel:
         let currentStream = null;
         let capturedImageDataURL = null;
 
-        // Open camera modal and start camera
+        // Open camera modal and start camera - COMMENTED OUT
+        /*
         async function openCameraModal() {
             cameraModal.classList.add('active');
             
@@ -1025,6 +1026,7 @@ To deploy on Vercel:
                 viewfinderPlaceholder.innerHTML = '<div>❌</div><div>Camera access denied</div>';
             }
         }
+        */
 
         // Close camera modal and stop camera
         function closeCameraModal() {
@@ -1124,7 +1126,8 @@ To deploy on Vercel:
             }
         }
 
-        // Handle capture button click
+        // Handle capture button click - COMMENTED OUT
+        /*
         async function handleCapture() {
             if (!currentStream) return;
 
@@ -1149,8 +1152,10 @@ To deploy on Vercel:
             // Generate Ghibli image
             await generateGhibliImage();
         }
+        */
 
-        // Generate Ghibli image using API endpoint
+        // Generate Ghibli image using API endpoint - COMMENTED OUT
+        /*
         async function generateGhibliImage() {
 
             try {
@@ -1220,8 +1225,10 @@ To deploy on Vercel:
                 openCameraModal();
             }
         }
+        */
 
-        // Fallback function using DALL-E variations API endpoint
+        // Fallback function using DALL-E variations API endpoint - COMMENTED OUT
+        /*
         async function generateWithDallE() {
             const response = await fetch('/api/variations', {
                 method: 'POST',
@@ -1257,6 +1264,7 @@ To deploy on Vercel:
             const description = await getImageDescription();
             animateWatchText(description); // Don't await this, let it run in background
         }
+        */
 
         // Save generated image
         function saveImage() {
@@ -1283,14 +1291,14 @@ To deploy on Vercel:
             tooltip.classList.remove('show');
         }
 
-        // Event Listeners
-        watchGenerateBtn.addEventListener('click', openCameraModal);
-        watchGenerateBtn.addEventListener('mouseenter', () => showTooltip(cameraTooltip));
-        watchGenerateBtn.addEventListener('mouseleave', () => hideTooltip(cameraTooltip));
+        // Event Listeners - CAPTURE FUNCTIONALITY COMMENTED OUT
+        // watchGenerateBtn.addEventListener('click', openCameraModal);
+        // watchGenerateBtn.addEventListener('mouseenter', () => showTooltip(cameraTooltip));
+        // watchGenerateBtn.addEventListener('mouseleave', () => hideTooltip(cameraTooltip));
         
         // Camera buttons no longer exist - both buttons now link to anna.dating
         
-        captureBtn.addEventListener('click', handleCapture);
+        // captureBtn.addEventListener('click', handleCapture);
         saveBtn.addEventListener('click', saveImage);
         resetBtn.addEventListener('click', resetCapture);
         
@@ -1301,7 +1309,8 @@ To deploy on Vercel:
             }
         });
 
-        // Add event listeners for placeholder buttons
+        // Add event listeners for placeholder buttons - COMMENTED OUT (buttons are now anchor tags)
+        /*
         const placeholderButtons = document.querySelectorAll('.watch-btn-placeholder');
         placeholderButtons.forEach(btn => {
             const row = btn.getAttribute('data-row');
@@ -1322,6 +1331,7 @@ To deploy on Vercel:
                 btn.addEventListener('mouseleave', () => hideTooltip(emailTooltip));
             }
         });
+        */
     </script>
 
 </body>
