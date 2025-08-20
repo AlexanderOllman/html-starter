@@ -1,9 +1,15 @@
 <!DOCTYPE html>
+<!-- 
+Ghibli Image Generator with OpenAI API
+To deploy on Vercel:
+1. Add OPENAI_API_KEY to your Vercel environment variables
+2. The API key will be injected at build time
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Familiar</title>
+    <title>Ghibli Image Generator</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Caveat&display=swap');
 
@@ -325,11 +331,283 @@
             object-fit: contain;
         }
 
+        /* Hover Tooltip Animations */
+        .hover-tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            white-space: nowrap;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 20;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
 
+        .hover-tooltip.show {
+            opacity: 1;
+            transform: translateY(-45px);
+        }
 
+        /* Tooltip positioning */
+        .tooltip-camera {
+            top: var(--button-grid-top);
+            left: calc(var(--button-grid-left) + 2.25%);
+            transform-origin: center bottom;
+        }
 
+        .tooltip-email {
+            top: calc(var(--button-grid-top) + var(--button-row-spacing) * 2);
+            left: calc(var(--button-grid-left) + var(--button-col-spacing) * 3 + 2.25%);
+            transform-origin: center bottom;
+        }
 
+        /* Watch loading overlay */
+        .watch-loading {
+            position: absolute;
+            top: 40%;
+            left: 20%;
+            right: 20%;
+            bottom: 30%;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
 
+        .loading-spinner-large {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 10px;
+        }
+
+        .loading-text {
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* Camera Modal */
+        .camera-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
+
+        .camera-modal.active {
+            display: flex;
+        }
+
+        /* Desktop: Camera modal covers full screen */
+        @media (min-width: 769px) {
+            .camera-modal.active {
+                width: 100vw;
+                height: 100vh;
+                left: 0;
+                justify-content: center;
+                align-items: center;
+                background: rgba(0, 0, 0, 0.7);
+            }
+        }
+
+        /* Mobile: Camera modal centered */
+        @media (max-width: 768px) {
+            .camera-modal.active {
+                background: rgba(0, 0, 0, 0.7);
+                justify-content: center;
+                align-items: center;
+            }
+            
+            .modal-dismiss-text {
+                display: none;
+            }
+        }
+
+        .modal-content {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-dismiss-text {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9em;
+            text-align: center;
+            margin-top: 20px;
+            font-style: italic;
+        }
+
+        /* Circular Viewfinder */
+        .circular-viewfinder {
+            width: 350px;
+            height: 350px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid #fff;
+            position: relative;
+            background: #000;
+        }
+
+        .circular-viewfinder video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .viewfinder-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #fff;
+            font-size: 1.2em;
+        }
+
+        /* Capture Button */
+        .capture-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            border: 4px solid #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.2s ease;
+        }
+
+        .capture-btn:hover {
+            background: #fff;
+            transform: translateX(-50%) scale(1.1);
+        }
+
+        .capture-btn:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
+        /* Result States */
+        .result-container {
+            position: relative;
+            width: 350px;
+            height: 350px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid #fff;
+            background: #000;
+            display: none;
+        }
+
+        .result-container.active {
+            display: block;
+        }
+
+        .captured-image, .generated-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .captured-image {
+            filter: blur(8px);
+        }
+
+        .generating-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .generating-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: none;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .action-buttons.active {
+            display: flex;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #333;
+            border-radius: 25px;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: visible;
+            min-width: 120px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .action-btn:hover {
+            background: #333;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
 
 
 
@@ -403,7 +681,9 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
         }
 
+        /* Camera Button Styles - No longer needed, both buttons use mailing-button styles */
 
+        /* Desktop camera button styles - No longer needed */
 
         /* Mobile Responsive */
         @media (max-width: 768px) {
@@ -452,9 +732,27 @@
                 font-size: 9px;
             }
 
+            .hover-tooltip {
+                font-size: 0.8em;
+                padding: 6px 10px;
+            }
 
+            .circular-viewfinder, .result-container {
+                width: 280px;
+                height: 280px;
+            }
 
+            .capture-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
 
+            .action-btn {
+                padding: 12px 24px;
+                font-size: 1em;
+                min-width: 100px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -496,7 +794,7 @@
                 white-space: nowrap;
             }
 
-
+            /* Both buttons now use mobile-mailing-button class */
             
             .watch-section {
                 flex: 1;
@@ -526,9 +824,25 @@
                 font-size: 8px;
             }
 
+            .hover-tooltip {
+                font-size: 0.7em;
+                padding: 5px 8px;
+            }
 
+            .circular-viewfinder, .result-container {
+                width: 250px;
+                height: 250px;
+            }
 
+            .modal-content {
+                padding: 15px;
+            }
 
+            .action-btn {
+                padding: 10px 20px;
+                font-size: 0.9em;
+                min-width: 90px;
+            }
         }
 
         /* Extra small mobile devices */
@@ -562,7 +876,7 @@
         <!-- Left Side - Header Section -->
         <div class="header-section">
             <img src="header.png" alt="Header" class="header-image">
-            <!-- <p class="header-subtext">Click on the watch buttons to visit Anna Dating!</p> -->
+            <!-- <p class="header-subtext">Click on the buttons to discover the meow-gic!</p> -->
             <div class="desktop-buttons">
                 <a href="https://ezvrhoowk8u.typeform.com/to/SgW5VT44" target="_blank" class="mailing-button">Join Mailing List</a>
             </div>
@@ -575,7 +889,7 @@
             
                         <!-- Watch Screen Text Display -->
             <div class="watch-screen-text" id="watchScreenText">
-                Anna
+                Hello
             </div>
             
             <!-- Watch Screen Image Overlay -->
@@ -583,27 +897,29 @@
                 <img src="screen.png" alt="Watch Screen">
           </div>
             
-
+                        <!-- Hover Tooltips -->
+            <div class="hover-tooltip tooltip-camera" id="cameraTooltip">Take photo!</div>
+            <div class="hover-tooltip tooltip-email" id="emailTooltip">Call me maybe?</div>
 
             <!-- Button overlays positioned over the watch buttons -->
             <div class="watch-buttons">
                 <!-- Row 1 - Top row (4 columns) -->
-                <button class="watch-btn" data-row="0" data-col="0" title="Button 1">1</button>
-                <button class="watch-btn" data-row="0" data-col="1" title="Button 2">2</button>
-                <button class="watch-btn" data-row="0" data-col="2" title="Button 3">3</button>
-                <button class="watch-btn" data-row="0" data-col="3" title="Button 4">4</button>
+                <button class="watch-btn watch-btn-capture" id="watchGenerateBtn" data-row="0" data-col="0" title="Generate Ghibli Image">🎨</button>
+                <button class="watch-btn watch-btn-placeholder" data-row="0" data-col="1" title="Button 2">2</button>
+                <button class="watch-btn watch-btn-placeholder" data-row="0" data-col="2" title="Button 3">3</button>
+                <button class="watch-btn watch-btn-placeholder" data-row="0" data-col="3" title="Button 4">4</button>
                 
                 <!-- Row 2 - Middle row (4 columns) -->
-                <button class="watch-btn" data-row="1" data-col="0" title="Button 5">5</button>
-                <button class="watch-btn" data-row="1" data-col="1" title="Button 6">6</button>
-                <button class="watch-btn" data-row="1" data-col="2" title="Button 7">7</button>
-                <button class="watch-btn" data-row="1" data-col="3" title="Button 8">8</button>
+                <button class="watch-btn watch-btn-placeholder" data-row="1" data-col="0" title="Button 5">5</button>
+                <button class="watch-btn watch-btn-placeholder" data-row="1" data-col="1" title="Button 6">6</button>
+                <button class="watch-btn watch-btn-placeholder" data-row="1" data-col="2" title="Button 7">7</button>
+                <button class="watch-btn watch-btn-placeholder" data-row="1" data-col="3" title="Button 8">8</button>
                 
                 <!-- Row 3 - Bottom row (4 columns) -->
-                <button class="watch-btn" data-row="2" data-col="0" title="Button 9">9</button>
-                <button class="watch-btn" data-row="2" data-col="1" title="Button 10">10</button>
-                <button class="watch-btn" data-row="2" data-col="2" title="Button 11">11</button>
-                <button class="watch-btn" data-row="2" data-col="3" title="Button 12">12</button>
+                <button class="watch-btn watch-btn-placeholder" data-row="2" data-col="0" title="Button 9">9</button>
+                <button class="watch-btn watch-btn-placeholder" data-row="2" data-col="1" title="Button 10">10</button>
+                <button class="watch-btn watch-btn-placeholder" data-row="2" data-col="2" title="Button 11">11</button>
+                <button class="watch-btn watch-btn-placeholder" data-row="2" data-col="3" title="Button 12"><a href="https://anna.dating">12</a></button>
             </div>
             </div>
           </div>
@@ -619,17 +935,397 @@
         <a href="https://ezvrhoowk8u.typeform.com/to/SgW5VT44" target="_blank" class="mobile-mailing-button">Join Mailing List</a>
             </div>
 
+    <!-- Camera Modal -->
+    <div class="camera-modal" id="cameraModal">
+        <div class="modal-content">
+            <!-- Circular Viewfinder -->
+            <div class="circular-viewfinder" id="circularViewfinder">
+                <div class="viewfinder-placeholder" id="viewfinderPlaceholder">
+                    <div>📷</div>
+                    <div>Requesting camera access...</div>
+        </div>
+                <video id="videoElement" autoplay muted style="display: none;"></video>
+                <button class="capture-btn" id="captureBtn" style="display: none;">📸</button>
+    </div>
 
+            <!-- Result Container -->
+            <div class="result-container" id="resultContainer">
+                <img id="capturedImage" class="captured-image" style="display: none;">
+                <img id="generatedImage" class="generated-image" style="display: none;">
+                <div class="generating-overlay" id="generatingOverlay" style="display: none;">
+                    <div class="generating-spinner"></div>
+                    <div>Generating...</div>
+        </div>
+    </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons" id="actionButtons">
+                <button class="action-btn save-btn" id="saveBtn">💾 Save</button>
+                <button class="action-btn reset-btn" id="resetBtn">🔄 Reset</button>
+            </div>
+        </div>
+        
+        <!-- Dismiss instruction -->
+        <div class="modal-dismiss-text">Tap anywhere to dismiss</div>
+    </div>
 
 
     
     <script>
-        // Add event listeners for all watch buttons to redirect to anna.dating
-        const watchButtons = document.querySelectorAll('.watch-btn');
-        watchButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                window.open('https://anna.dating', '_blank');
+        // DOM Elements
+        const cameraModal = document.getElementById('cameraModal');
+        const circularViewfinder = document.getElementById('circularViewfinder');
+        const viewfinderPlaceholder = document.getElementById('viewfinderPlaceholder');
+        const videoElement = document.getElementById('videoElement');
+        const captureBtn = document.getElementById('captureBtn');
+        const resultContainer = document.getElementById('resultContainer');
+        const capturedImage = document.getElementById('capturedImage');
+        const generatedImage = document.getElementById('generatedImage');
+        const generatingOverlay = document.getElementById('generatingOverlay');
+        const actionButtons = document.getElementById('actionButtons');
+        const saveBtn = document.getElementById('saveBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const watchGenerateBtn = document.getElementById('watchGenerateBtn');
+        const cameraTooltip = document.getElementById('cameraTooltip');
+        const emailTooltip = document.getElementById('emailTooltip');
+        const watchScreenText = document.getElementById('watchScreenText');
+
+        // API endpoints are now handled by Vercel serverless functions
+        // The OPENAI_API_KEY environment variable is accessed server-side in /api/ endpoints
+        let currentStream = null;
+        let capturedImageDataURL = null;
+
+        // Open camera modal and start camera
+        async function openCameraModal() {
+            cameraModal.classList.add('active');
+            
+
+            
+            // Hide other elements but keep watch visible
+            // On desktop, keep header section visible
+            if (window.innerWidth <= 768) {
+                document.querySelector('.header-section').style.display = 'none';
+            }
+            document.querySelector('.mobile-header-overlay').style.display = 'none';
+            document.querySelector('.mobile-buttons').style.display = 'none';
+            
+            try {
+                // Request camera access
+                currentStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 1024 },
+                        height: { ideal: 1024 },
+                        aspectRatio: 1
+                    } 
+                });
+
+                // Show video stream
+                videoElement.srcObject = currentStream;
+                videoElement.style.display = 'block';
+                viewfinderPlaceholder.style.display = 'none';
+                captureBtn.style.display = 'flex';
+
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                viewfinderPlaceholder.innerHTML = '<div>❌</div><div>Camera access denied</div>';
+            }
+        }
+
+        // Close camera modal and stop camera
+        function closeCameraModal() {
+            cameraModal.classList.remove('active');
+            
+
+            
+            // Show other elements again
+            // On desktop, header section was never hidden, so ensure it's visible
+            // On mobile, restore header section
+            if (window.innerWidth <= 768) {
+                document.querySelector('.header-section').style.display = 'flex';
+                document.querySelector('.mobile-header-overlay').style.display = 'block';
+                document.querySelector('.mobile-buttons').style.display = 'flex';
+            }
+            
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            
+            // Reset to initial state
+            resetModalState();
+        }
+
+        // Reset modal to initial state
+        function resetModalState() {
+            circularViewfinder.style.display = 'block';
+            resultContainer.classList.remove('active');
+            actionButtons.classList.remove('active');
+            
+            videoElement.style.display = 'none';
+            captureBtn.style.display = 'none';
+            capturedImage.style.display = 'none';
+            generatedImage.style.display = 'none';
+            generatingOverlay.style.display = 'none';
+            
+            viewfinderPlaceholder.style.display = 'flex';
+            viewfinderPlaceholder.innerHTML = '<div>📷</div><div>Requesting camera access...</div>';
+        }
+
+        // Capture frame from video
+        function captureFrame() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            
+            return canvas.toDataURL('image/png');
+        }
+
+        // Convert data URL to base64
+        function dataURLToBase64(dataURL) {
+            return dataURL.split(',')[1];
+        }
+
+        // Animate text word by word on watch screen (one word at a time)
+        async function animateWatchText(text) {
+            const words = text.split(' ');
+            
+            for (let i = 0; i < words.length; i++) {
+                watchScreenText.textContent = words[i]; // Show only current word
+                await new Promise(resolve => setTimeout(resolve, 500)); // 0.5s pause
+            }
+            
+            // After animation, wait 2 seconds then return to "Hello"
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            watchScreenText.textContent = 'Hello';
+        }
+
+        // Get description of image from API endpoint
+        async function getImageDescription() {
+            try {
+                const response = await fetch('/api/describe-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imageData: capturedImageDataURL
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.description;
+
+            } catch (error) {
+                console.error('Error getting image description:', error);
+                return "A beautiful captured moment transformed into art";
+            }
+        }
+
+        // Handle capture button click
+        async function handleCapture() {
+            if (!currentStream) return;
+
+            // Capture the current frame
+            capturedImageDataURL = captureFrame();
+            
+            // Hide viewfinder and show result container
+            circularViewfinder.style.display = 'none';
+            resultContainer.classList.add('active');
+            
+            // Show captured image (blurred) with generating overlay
+            capturedImage.src = capturedImageDataURL;
+            capturedImage.style.display = 'block';
+            generatingOverlay.style.display = 'flex';
+
+            // Stop camera stream
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+
+            // Generate Ghibli image
+            await generateGhibliImage();
+        }
+
+        // Generate Ghibli image using API endpoint
+        async function generateGhibliImage() {
+
+            try {
+                console.log("Generating Ghibli style image...");
+
+                const imagePrompt = `Transform this photo into a beautiful Studio Ghibli style illustration. Keep the same composition and general elements, but render it in the distinctive Ghibli aesthetic with:
+                - Soft, dreamy watercolor-like textures
+                - Warm, magical lighting
+                - Gentle, flowing lines
+                - Rich but harmonious colors
+                - A sense of wonder and whimsy
+                - The characteristic Ghibli atmosphere of peace and beauty
+                
+                Maintain the original subject and pose, but give it the enchanting quality of a Hayao Miyazaki film scene.`;
+
+                // Call API endpoint for image editing
+                const response = await fetch('/api/edit-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imageData: capturedImageDataURL,
+                        prompt: imagePrompt
+                    })
+                });
+
+                if (!response.ok) {
+                    // Fallback to DALL-E variations API if edits endpoint not available
+                    console.log("Trying fallback to DALL-E variations API...");
+                    return await generateWithDallE();
+                }
+
+                const data = await response.json();
+                console.log("Received response from API:", data);
+                
+                // Extract image data from API response
+                if (data.imageBase64) {
+                    
+                    // Hide generating overlay and captured image
+                    generatingOverlay.style.display = 'none';
+                    capturedImage.style.display = 'none';
+                    
+                    // Show generated image
+                    generatedImage.src = data.imageBase64;
+                    generatedImage.style.display = 'block';
+                    
+                    // Show action buttons
+                    actionButtons.classList.add('active');
+                    
+                    console.log("Ghibli image generated successfully!");
+                    
+                    // Get description and animate it on watch screen
+                    const description = await getImageDescription();
+                    animateWatchText(description); // Don't await this, let it run in background
+
+                } else {
+                    throw new Error('No image was generated. Please try again.');
+                }
+
+                } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred: ' + error.message);
+                
+                // Reset to initial state on error
+                resetModalState();
+                openCameraModal();
+            }
+        }
+
+        // Fallback function using DALL-E variations API endpoint
+        async function generateWithDallE() {
+            const response = await fetch('/api/variations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    imageData: capturedImageDataURL
+                })
             });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            // Hide generating overlay and captured image
+            generatingOverlay.style.display = 'none';
+            capturedImage.style.display = 'none';
+            
+            // Show generated image
+            generatedImage.src = data.imageBase64;
+            generatedImage.style.display = 'block';
+            
+            // Show action buttons
+            actionButtons.classList.add('active');
+            
+            console.log("Ghibli image generated successfully with DALL-E!");
+            
+            // Get description and animate it on watch screen
+            const description = await getImageDescription();
+            animateWatchText(description); // Don't await this, let it run in background
+        }
+
+        // Save generated image
+        function saveImage() {
+            if (generatedImage.src) {
+                const link = document.createElement('a');
+                link.download = `ghibli-image-${Date.now()}.png`;
+                link.href = generatedImage.src;
+                link.click();
+            }
+        }
+
+        // Reset and take another photo
+        function resetCapture() {
+            resetModalState();
+            openCameraModal();
+        }
+
+        // Tooltip hover functionality
+        function showTooltip(tooltip) {
+            tooltip.classList.add('show');
+        }
+        
+        function hideTooltip(tooltip) {
+            tooltip.classList.remove('show');
+        }
+
+        // Event Listeners
+        watchGenerateBtn.addEventListener('click', openCameraModal);
+        watchGenerateBtn.addEventListener('mouseenter', () => showTooltip(cameraTooltip));
+        watchGenerateBtn.addEventListener('mouseleave', () => hideTooltip(cameraTooltip));
+        
+        // Camera buttons no longer exist - both buttons now link to anna.dating
+        
+        captureBtn.addEventListener('click', handleCapture);
+        saveBtn.addEventListener('click', saveImage);
+        resetBtn.addEventListener('click', resetCapture);
+        
+        // Close modal when clicking outside
+        cameraModal.addEventListener('click', (event) => {
+            if (event.target === cameraModal) {
+                closeCameraModal();
+            }
+        });
+
+        // Add event listeners for placeholder buttons
+        const placeholderButtons = document.querySelectorAll('.watch-btn-placeholder');
+        placeholderButtons.forEach(btn => {
+            const row = btn.getAttribute('data-row');
+            const col = btn.getAttribute('data-col');
+            
+            btn.addEventListener('click', () => {
+                // Handle email/mailing list button (bottom-right: row 2, col 3)
+                if (row === "2" && col === "3") {
+                    window.open('https://anna.dating', '_blank');
+                } else {
+                    alert(`Button ${btn.textContent} clicked! (Row ${row}, Col ${col})\nFunctionality coming soon...`);
+                }
+            });
+            
+            // Add hover tooltips for specific buttons
+            if (row === "2" && col === "3") {
+                btn.addEventListener('mouseenter', () => showTooltip(emailTooltip));
+                btn.addEventListener('mouseleave', () => hideTooltip(emailTooltip));
+            }
         });
     </script>
 
