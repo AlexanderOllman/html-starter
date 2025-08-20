@@ -8,9 +8,7 @@
     "build": "echo 'No build step required for static site'",
     "start": "vercel dev"
   },
-  "dependencies": {
-    "form-data": "^4.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {},
   "keywords": [
     "ghibli",

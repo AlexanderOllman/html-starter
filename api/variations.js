@@ -40,27 +40,33 @@ export default async function handler(req, res) {
             throw new Error('Image too large. Must be less than 4MB.');
         }
 
-        // Create FormData for the API call
-        const FormData = require('form-data');
+        // Create FormData using native Node.js FormData (Node 18+)
         const formData = new FormData();
         
-        // Add image with proper headers
-        formData.append('image', imageBuffer, {
-            filename: 'image.png',
-            contentType: 'image/png',
-            knownLength: imageBuffer.length
+        // Create a File-like object from the buffer
+        const imageFile = new File([imageBuffer], 'image.png', {
+            type: 'image/png'
         });
+        
+        console.log('Created file object:', {
+            name: imageFile.name,
+            size: imageFile.size,
+            type: imageFile.type
+        });
+        
+        // Add fields to FormData
+        formData.append('image', imageFile);
         formData.append('n', '1');
         formData.append('size', '1024x1024');
         formData.append('response_format', 'b64_json');
         
-        console.log('FormData prepared, sending to OpenAI...');
+        console.log('FormData prepared with native FormData, sending to OpenAI...');
 
         const response = await fetch('https://api.openai.com/v1/images/variations', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                ...formData.getHeaders()
+                'Authorization': `Bearer ${OPENAI_API_KEY}`
+                // Note: Don't set Content-Type header, let fetch handle it for FormData
             },
             body: formData
         });
