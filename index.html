@@ -1167,50 +1167,9 @@ To deploy on Vercel:
                 
                 Maintain the original subject and pose, but give it the enchanting quality of a Hayao Miyazaki film scene.`;
 
-                // Call API endpoint for image editing
-                const response = await fetch('/api/edit-image', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        imageData: capturedImageDataURL,
-                        prompt: imagePrompt
-                    })
-                });
-
-                if (!response.ok) {
-                    // Fallback to DALL-E variations API if edits endpoint not available
-                    console.log("Trying fallback to DALL-E variations API...");
-                    return await generateWithDallE();
-                }
-
-                const data = await response.json();
-                console.log("Received response from API:", data);
-                
-                // Extract image data from API response
-                if (data.imageBase64) {
-                    
-                    // Hide generating overlay and captured image
-                    generatingOverlay.style.display = 'none';
-                    capturedImage.style.display = 'none';
-                    
-                    // Show generated image
-                    generatedImage.src = data.imageBase64;
-                    generatedImage.style.display = 'block';
-                    
-                    // Show action buttons
-                    actionButtons.classList.add('active');
-                    
-                    console.log("Ghibli image generated successfully!");
-                    
-                    // Get description and animate it on watch screen
-                    const description = await getImageDescription();
-                    animateWatchText(description); // Don't await this, let it run in background
-
-                } else {
-                    throw new Error('No image was generated. Please try again.');
-                }
+                // Skip problematic image editing API and go directly to variations
+                console.log("Using DALL-E variations API...");
+                await generateWithDallE();
 
                 } catch (error) {
                 console.error('Error:', error);

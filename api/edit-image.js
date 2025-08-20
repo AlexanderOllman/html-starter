@@ -28,7 +28,12 @@ export default async function handler(req, res) {
     try {
         // Convert base64 to blob
         const base64Data = imageData.split(',')[1];
+        if (!base64Data) {
+            throw new Error('Invalid image data format');
+        }
+        
         const imageBuffer = Buffer.from(base64Data, 'base64');
+        console.log('Image buffer size:', imageBuffer.length, 'bytes');
         
         // Check image size (must be < 4MB)
         if (imageBuffer.length > 4 * 1024 * 1024) {
@@ -39,9 +44,9 @@ export default async function handler(req, res) {
         const FormData = require('form-data');
         const formData = new FormData();
         
-        formData.append('model', 'dall-e-2');
+        // Append fields in the correct order for DALL-E 2 image editing
         formData.append('image', imageBuffer, {
-            filename: 'input.png',
+            filename: 'image.png',
             contentType: 'image/png'
         });
         formData.append('prompt', prompt);

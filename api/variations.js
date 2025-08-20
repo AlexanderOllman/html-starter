@@ -28,7 +28,12 @@ export default async function handler(req, res) {
     try {
         // Convert base64 to blob
         const base64Data = imageData.split(',')[1];
+        if (!base64Data) {
+            throw new Error('Invalid image data format');
+        }
+        
         const imageBuffer = Buffer.from(base64Data, 'base64');
+        console.log('Image buffer size:', imageBuffer.length, 'bytes');
         
         // Check image size (must be < 4MB)
         if (imageBuffer.length > 4 * 1024 * 1024) {
@@ -39,13 +44,17 @@ export default async function handler(req, res) {
         const FormData = require('form-data');
         const formData = new FormData();
         
+        // Add image with proper headers
         formData.append('image', imageBuffer, {
-            filename: 'input.png',
-            contentType: 'image/png'
+            filename: 'image.png',
+            contentType: 'image/png',
+            knownLength: imageBuffer.length
         });
         formData.append('n', '1');
         formData.append('size', '1024x1024');
         formData.append('response_format', 'b64_json');
+        
+        console.log('FormData prepared, sending to OpenAI...');
 
         const response = await fetch('https://api.openai.com/v1/images/variations', {
             method: 'POST',
@@ -58,8 +67,9 @@ export default async function handler(req, res) {
 
         if (!response.ok) {
             const errorData = await response.text();
-            console.error('OpenAI API Error:', errorData);
-            throw new Error(`OpenAI API error: ${response.status}`);
+            console.error('OpenAI API Error Response Status:', response.status);
+            console.error('OpenAI API Error Response:', errorData);
+            throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
         }
 
         const data = await response.json();
